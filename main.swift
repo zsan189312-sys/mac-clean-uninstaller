@@ -181,17 +181,51 @@ final class MainVC: NSViewController, NSTableViewDataSource, NSTableViewDelegate
     let spinner = NSProgressIndicator()
     let uninstallBtn = NSButton(title: "卸载到废纸篓", target: nil, action: nil)
     let rescanBtn = NSButton(title: "重新扫描", target: nil, action: nil)
+    let emptyStack = NSStackView()
 
     override func loadView() {
-        let root = DropView(frame: NSRect(x: 0, y: 0, width: 820, height: 560))
+        let root = DropView(frame: NSRect(x: 0, y: 0, width: 900, height: 620))
         root.wantsLayer = true
+
+        // ---- 左侧侧栏（毛玻璃质感）----
+        let sidebar = NSVisualEffectView()
+        sidebar.translatesAutoresizingMaskIntoConstraints = false
+        sidebar.material = .sidebar
+        sidebar.blendingMode = .behindWindow
+        sidebar.state = .active
+
+        let sideTitle = NSTextField(labelWithString: "已安装应用")
+        sideTitle.translatesAutoresizingMaskIntoConstraints = false
+        sideTitle.font = NSFont.systemFont(ofSize: 12, weight: .semibold)
+        sideTitle.textColor = .secondaryLabelColor
+
+        // ---- 左侧应用列表 ----
+        let appsScroll = NSScrollView()
+        appsScroll.translatesAutoresizingMaskIntoConstraints = false
+        appsScroll.hasVerticalScroller = true
+        appsScroll.drawsBackground = false
+        appsScroll.borderType = .noBorder
+        let ac = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("app"))
+        ac.width = 230
+        appsTable.addTableColumn(ac)
+        appsTable.headerView = nil
+        appsTable.dataSource = self
+        appsTable.delegate = self
+        appsTable.rowHeight = 48
+        appsTable.backgroundColor = .clear
+        appsTable.style = .inset
+        appsTable.identifier = NSUserInterfaceItemIdentifier("apps")
+        appsScroll.documentView = appsTable
+
+        sidebar.addSubview(sideTitle)
+        sidebar.addSubview(appsScroll)
 
         // ---- 顶部详情头 ----
         let header = NSView()
         header.translatesAutoresizingMaskIntoConstraints = false
         header.wantsLayer = true
         header.layer?.backgroundColor = NSColor.underPageBackgroundColor.cgColor
-        header.layer?.cornerRadius = 10
+        header.layer?.cornerRadius = 12
 
         headerIcon.translatesAutoresizingMaskIntoConstraints = false
         headerIcon.image = NSImage(systemSymbolName: "square.grid.2x2", accessibilityDescription: nil)
@@ -201,8 +235,8 @@ final class MainVC: NSViewController, NSTableViewDataSource, NSTableViewDelegate
         nameBid.alignment = .leading
         nameBid.spacing = 2
         nameBid.translatesAutoresizingMaskIntoConstraints = false
-        headerName.font = NSFont.systemFont(ofSize: 16, weight: .semibold)
-        headerBid.font = NSFont.systemFont(ofSize: 11)
+        headerName.font = NSFont.systemFont(ofSize: 17, weight: .semibold)
+        headerBid.font = NSFont.monospacedSystemFont(ofSize: 11, weight: .regular)
         headerBid.textColor = .secondaryLabelColor
 
         headerSize.translatesAutoresizingMaskIntoConstraints = false
@@ -221,41 +255,19 @@ final class MainVC: NSViewController, NSTableViewDataSource, NSTableViewDelegate
         header.addSubview(headerSize)
         header.addSubview(checkAllBtn)
         NSLayoutConstraint.activate([
-            headerIcon.leadingAnchor.constraint(equalTo: header.leadingAnchor, constant: 12),
+            headerIcon.leadingAnchor.constraint(equalTo: header.leadingAnchor, constant: 14),
             headerIcon.centerYAnchor.constraint(equalTo: header.centerYAnchor),
-            headerIcon.widthAnchor.constraint(equalToConstant: 44),
-            headerIcon.heightAnchor.constraint(equalToConstant: 44),
+            headerIcon.widthAnchor.constraint(equalToConstant: 48),
+            headerIcon.heightAnchor.constraint(equalToConstant: 48),
 
-            nameBid.leadingAnchor.constraint(equalTo: headerIcon.trailingAnchor, constant: 10),
+            nameBid.leadingAnchor.constraint(equalTo: headerIcon.trailingAnchor, constant: 12),
             nameBid.centerYAnchor.constraint(equalTo: header.centerYAnchor),
 
-            checkAllBtn.trailingAnchor.constraint(equalTo: header.trailingAnchor, constant: -12),
+            checkAllBtn.trailingAnchor.constraint(equalTo: header.trailingAnchor, constant: -14),
             checkAllBtn.centerYAnchor.constraint(equalTo: header.centerYAnchor),
             headerSize.trailingAnchor.constraint(equalTo: checkAllBtn.leadingAnchor, constant: -12),
             headerSize.centerYAnchor.constraint(equalTo: header.centerYAnchor),
         ])
-
-        // ---- 左侧应用列表 ----
-        let appsScroll = NSScrollView()
-        appsScroll.translatesAutoresizingMaskIntoConstraints = false
-        appsScroll.hasVerticalScroller = true
-        appsScroll.borderType = .noBorder
-        appsScroll.wantsLayer = true
-        appsScroll.layer?.backgroundColor = NSColor.textBackgroundColor.cgColor
-        appsScroll.layer?.cornerRadius = 8
-        appsScroll.layer?.borderWidth = 1
-        appsScroll.layer?.borderColor = NSColor.separatorColor.cgColor
-        let ac = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("app"))
-        ac.width = 230
-        appsTable.addTableColumn(ac)
-        appsTable.headerView = nil
-        appsTable.dataSource = self
-        appsTable.delegate = self
-        appsTable.rowHeight = 44
-        appsTable.backgroundColor = .clear
-        appsTable.style = .inset
-        appsTable.identifier = NSUserInterfaceItemIdentifier("apps")
-        appsScroll.documentView = appsTable
 
         // ---- 右侧残留文件列表 ----
         let filesScroll = NSScrollView()
@@ -264,26 +276,47 @@ final class MainVC: NSViewController, NSTableViewDataSource, NSTableViewDelegate
         filesScroll.borderType = .noBorder
         filesScroll.wantsLayer = true
         filesScroll.layer?.backgroundColor = NSColor.textBackgroundColor.cgColor
-        filesScroll.layer?.cornerRadius = 8
+        filesScroll.layer?.cornerRadius = 12
         filesScroll.layer?.borderWidth = 1
         filesScroll.layer?.borderColor = NSColor.separatorColor.cgColor
         let fc1 = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("chk"))
         fc1.width = 30
         let fc2 = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("main"))
-        fc2.width = 400
+        fc2.width = 460
         let fc3 = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("size"))
-        fc3.width = 80
+        fc3.width = 90
         filesTable.addTableColumn(fc1)
         filesTable.addTableColumn(fc2)
         filesTable.addTableColumn(fc3)
         filesTable.headerView = nil
         filesTable.dataSource = self
         filesTable.delegate = self
-        filesTable.rowHeight = 28
+        filesTable.rowHeight = 30
         filesTable.backgroundColor = .clear
         filesTable.style = .inset
         filesTable.identifier = NSUserInterfaceItemIdentifier("files")
         filesScroll.documentView = filesTable
+
+        // ---- 空状态提示 ----
+        let emptyIcon = NSImageView()
+        emptyIcon.translatesAutoresizingMaskIntoConstraints = false
+        if let sym = NSImage(systemSymbolName: "shippingbox", accessibilityDescription: nil)?
+            .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 44, weight: .light)) {
+            emptyIcon.image = sym
+        }
+        emptyIcon.contentTintColor = .tertiaryLabelColor
+        let emptyTitle = NSTextField(labelWithString: "选择左侧应用查看残留文件")
+        emptyTitle.font = NSFont.systemFont(ofSize: 15, weight: .medium)
+        emptyTitle.textColor = .secondaryLabelColor
+        let emptySub = NSTextField(labelWithString: "或把 .app 直接拖进本窗口")
+        emptySub.font = NSFont.systemFont(ofSize: 12)
+        emptySub.textColor = .tertiaryLabelColor
+        let emptyStack = self.emptyStack
+        emptyStack.setViews([emptyIcon, emptyTitle, emptySub], in: .leading)
+        emptyStack.orientation = .vertical
+        emptyStack.alignment = .centerX
+        emptyStack.spacing = 8
+        emptyStack.translatesAutoresizingMaskIntoConstraints = false
 
         // ---- 底部栏 ----
         statusLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -296,12 +329,13 @@ final class MainVC: NSViewController, NSTableViewDataSource, NSTableViewDelegate
         uninstallBtn.translatesAutoresizingMaskIntoConstraints = false
         uninstallBtn.bezelStyle = .rounded
         uninstallBtn.controlSize = .large
+        uninstallBtn.bezelColor = .systemRed
         uninstallBtn.target = self
         uninstallBtn.action = #selector(uninstallClicked)
         uninstallBtn.keyEquivalent = "\r"
         uninstallBtn.attributedTitle = NSAttributedString(string: "卸载到废纸篓", attributes: [
             .font: NSFont.systemFont(ofSize: 13, weight: .semibold),
-            .foregroundColor: NSColor.systemRed,
+            .foregroundColor: NSColor.white,
         ])
         rescanBtn.translatesAutoresizingMaskIntoConstraints = false
         rescanBtn.bezelStyle = .rounded
@@ -314,9 +348,10 @@ final class MainVC: NSViewController, NSTableViewDataSource, NSTableViewDelegate
         hint.textColor = .tertiaryLabelColor
         hint.font = NSFont.systemFont(ofSize: 11)
 
+        root.addSubview(sidebar)
         root.addSubview(header)
-        root.addSubview(appsScroll)
         root.addSubview(filesScroll)
+        root.addSubview(emptyStack)
         root.addSubview(statusLabel)
         root.addSubview(spinner)
         root.addSubview(uninstallBtn)
@@ -324,21 +359,33 @@ final class MainVC: NSViewController, NSTableViewDataSource, NSTableViewDelegate
         root.addSubview(hint)
 
         NSLayoutConstraint.activate([
+            // 侧栏
+            sidebar.topAnchor.constraint(equalTo: root.topAnchor),
+            sidebar.leadingAnchor.constraint(equalTo: root.leadingAnchor),
+            sidebar.bottomAnchor.constraint(equalTo: root.bottomAnchor),
+            sidebar.widthAnchor.constraint(equalToConstant: 250),
+            sideTitle.topAnchor.constraint(equalTo: root.topAnchor, constant: 14),
+            sideTitle.leadingAnchor.constraint(equalTo: sidebar.leadingAnchor, constant: 16),
+            appsScroll.topAnchor.constraint(equalTo: sideTitle.bottomAnchor, constant: 8),
+            appsScroll.leadingAnchor.constraint(equalTo: sidebar.leadingAnchor, constant: 6),
+            appsScroll.trailingAnchor.constraint(equalTo: sidebar.trailingAnchor, constant: -6),
+            appsScroll.bottomAnchor.constraint(equalTo: sidebar.bottomAnchor, constant: -8),
+
+            // 详情头
             header.topAnchor.constraint(equalTo: root.topAnchor, constant: 12),
-            header.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 12),
+            header.leadingAnchor.constraint(equalTo: sidebar.trailingAnchor, constant: 12),
             header.trailingAnchor.constraint(equalTo: root.trailingAnchor, constant: -12),
             header.heightAnchor.constraint(equalToConstant: 68),
 
-            appsScroll.topAnchor.constraint(equalTo: header.bottomAnchor, constant: 10),
-            appsScroll.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 12),
-            appsScroll.bottomAnchor.constraint(equalTo: statusLabel.topAnchor, constant: -8),
-            appsScroll.widthAnchor.constraint(equalToConstant: 235),
-
+            // 文件列表与空状态
             filesScroll.topAnchor.constraint(equalTo: header.bottomAnchor, constant: 10),
-            filesScroll.leadingAnchor.constraint(equalTo: appsScroll.trailingAnchor, constant: 10),
+            filesScroll.leadingAnchor.constraint(equalTo: header.leadingAnchor),
             filesScroll.trailingAnchor.constraint(equalTo: root.trailingAnchor, constant: -12),
             filesScroll.bottomAnchor.constraint(equalTo: statusLabel.topAnchor, constant: -8),
+            emptyStack.centerXAnchor.constraint(equalTo: filesScroll.centerXAnchor),
+            emptyStack.centerYAnchor.constraint(equalTo: filesScroll.centerYAnchor),
 
+            // 底部栏
             hint.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 16),
             hint.bottomAnchor.constraint(equalTo: root.bottomAnchor, constant: -10),
 
@@ -359,6 +406,7 @@ final class MainVC: NSViewController, NSTableViewDataSource, NSTableViewDelegate
         root.onDrop = { [weak self] url in self?.acceptDroppedApp(url) }
 
         view = root
+        emptyStack.isHidden = false
         rescan()
     }
 
@@ -388,17 +436,17 @@ final class MainVC: NSViewController, NSTableViewDataSource, NSTableViewDelegate
         let id = tableView.identifier?.rawValue ?? ""
         if id == "apps" {
             let app = apps[row]
-            let icon = NSImageView(image: appIcon(app.url.path, size: 26))
+            let icon = NSImageView(image: appIcon(app.url.path, size: 28))
             let label = NSTextField(labelWithString: app.name)
             label.lineBreakMode = .byTruncatingTail
-            label.font = NSFont.systemFont(ofSize: 13)
+            label.font = NSFont.systemFont(ofSize: 13, weight: .medium)
             let sizeLabel = NSTextField(labelWithString: app.sizeLoaded ? fmtSize(app.size) : "计算中…")
             sizeLabel.font = NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .regular)
             sizeLabel.textColor = .secondaryLabelColor
             let vstack = NSStackView(views: [label, sizeLabel])
             vstack.orientation = .vertical
             vstack.alignment = .leading
-            vstack.spacing = 1
+            vstack.spacing = 2
             return makeRowCell(views: [icon, vstack])
         }
         switch tableColumn?.identifier.rawValue {
@@ -459,10 +507,11 @@ final class MainVC: NSViewController, NSTableViewDataSource, NSTableViewDelegate
         files = []
         filesTable.reloadData()
 
-        headerIcon.image = appIcon(app.url.path, size: 44)
+        headerIcon.image = appIcon(app.url.path, size: 48)
         headerName.stringValue = app.name
         headerBid.stringValue = app.bundleID
         headerSize.stringValue = "扫描中…"
+        emptyStack.isHidden = true
         spinner.isHidden = false
         spinner.startAnimation(nil)
 
@@ -644,6 +693,7 @@ final class MainVC: NSViewController, NSTableViewDataSource, NSTableViewDelegate
                     self.headerName.stringValue = "选择左侧应用"
                     self.headerBid.stringValue = "拖入 .app 也可卸载"
                     self.headerSize.stringValue = ""
+                    self.emptyStack.isHidden = false
                     self.rescan()
                 }
 
@@ -715,7 +765,7 @@ final class MainVC: NSViewController, NSTableViewDataSource, NSTableViewDelegate
 final class AppDelegate: NSObject, NSApplicationDelegate {
     var window: NSWindow?
     func applicationDidFinishLaunching(_ note: Notification) {
-        let win = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 820, height: 560),
+        let win = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 620),
                            styleMask: [.titled, .closable, .miniaturizable, .resizable],
                            backing: .buffered, defer: false)
         win.title = "Mac 干净卸载器"
