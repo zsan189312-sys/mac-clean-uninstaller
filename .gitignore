@@ -1,0 +1,7 @@
+# 构建产物
+AppUninstaller
+uninstall-test
+*.o
+AppUninstaller.app/
+AppUninstaller.app.bak-*/
+.DS_Store
