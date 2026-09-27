@@ -320,6 +320,7 @@ final class MainVC: NSViewController, NSTableViewDataSource, NSTableViewDelegate
 
         // ---- 底部栏 ----
         statusLabel.translatesAutoresizingMaskIntoConstraints = false
+        statusLabel.font = NSFont.systemFont(ofSize: 12)
         statusLabel.lineBreakMode = .byTruncatingMiddle
         statusLabel.textColor = .secondaryLabelColor
         spinner.translatesAutoresizingMaskIntoConstraints = false
@@ -385,11 +386,12 @@ final class MainVC: NSViewController, NSTableViewDataSource, NSTableViewDelegate
             emptyStack.centerXAnchor.constraint(equalTo: filesScroll.centerXAnchor),
             emptyStack.centerYAnchor.constraint(equalTo: filesScroll.centerYAnchor),
 
-            // 底部栏
-            hint.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 16),
+            // 底部栏（锚定右侧详情区，避免压在左侧应用列表上）
+            hint.leadingAnchor.constraint(greaterThanOrEqualTo: sidebar.trailingAnchor, constant: 16),
+            hint.leadingAnchor.constraint(equalTo: header.leadingAnchor),
             hint.bottomAnchor.constraint(equalTo: root.bottomAnchor, constant: -10),
 
-            statusLabel.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 16),
+            statusLabel.leadingAnchor.constraint(equalTo: header.leadingAnchor),
             statusLabel.trailingAnchor.constraint(lessThanOrEqualTo: rescanBtn.leadingAnchor, constant: -10),
             statusLabel.bottomAnchor.constraint(equalTo: hint.topAnchor, constant: -6),
 
